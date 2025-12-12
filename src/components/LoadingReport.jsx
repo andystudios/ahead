@@ -2,18 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './LoadingReport.css'
 
 export const FADE_IN_DURATION_MS = 600
-export const FADE_OUT_DURATION_MS = 600
-export const VISIBLE_DURATION_MS = 1400
+export const FADE_OUT_DURATION_MS = 900
+export const VISIBLE_DURATION_MS = 1600
 const PEEK_CLASS = 'loading-report-peek'
+const HIGHLIGHT_CLASS = 'loading-report-highlight'
 
 const DEFAULT_MESSAGES = [
   { text: 'When you have more than one report you can select them here', targetHtmlId: 'report-selector' },
   { text: 'Each part of your body can be selected here', targetHtmlId: 'system-navigation' },
-  { text: 'Grey areas indicate you should pay attention', targetHtmlId: 'system-navigation' },
+  { text: 'Grey areas indicate you should pay attention', targetHtmlId: 'system-navigation', highlightClass: 'bg-aubergine-500' },
   { text: 'Filter the results if you need', targetHtmlId: 'report-filters' },
 ]
 
-function LoadingReport({ messages = DEFAULT_MESSAGES }) {
+function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   const isReportPage =
     typeof window !== 'undefined' &&
     window.location.pathname.endsWith('report.html')
@@ -27,6 +28,7 @@ function LoadingReport({ messages = DEFAULT_MESSAGES }) {
 
   const safeMessages = useMemo(() => messages ?? [], [messages])
   const currentMessage = safeMessages[messageIndex]
+  const currentHighlightClass = currentMessage?.highlightClass || highlightClass
   const currentTargetId = currentMessage?.targetHtmlId
 
   useEffect(() => {
@@ -111,6 +113,24 @@ function LoadingReport({ messages = DEFAULT_MESSAGES }) {
     targetEl.classList.add(PEEK_CLASS)
     return () => targetEl.classList.remove(PEEK_CLASS)
   }, [currentTargetId, isMounted])
+
+  useEffect(() => {
+    if (!isMounted) return undefined
+    if (!currentHighlightClass) return undefined
+    if (messagePhase !== 'visible') return undefined
+
+    const highlightedNodes = Array.from(
+      document.getElementsByClassName(currentHighlightClass),
+    )
+
+    highlightedNodes.forEach((el) => {
+      el.classList.add(HIGHLIGHT_CLASS)
+    })
+    return () =>
+      highlightedNodes.forEach((el) => {
+        el.classList.remove(HIGHLIGHT_CLASS)
+      })
+  }, [currentHighlightClass, isMounted, messagePhase])
 
   useEffect(
     () => () => {

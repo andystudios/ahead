@@ -61,3 +61,23 @@
   position: relative;
   z-index: 10000;
 }
+
+.loading-report-highlight {
+  transform: scale(1);
+  transform-origin: center center;
+  animation: loading-report-pulse 1200ms ease-in-out infinite;
+}
+
+@keyframes loading-report-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
