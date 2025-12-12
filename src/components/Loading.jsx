@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import '../App.css'
+import './Loading.css'
 import logo from '../assets/logo.svg'
 import { DISABLE_COOKIES } from '../libs/config'
 import { hasSeenIntroCookie, setIntroSeenCookie } from '../libs/cookies'
@@ -18,7 +18,8 @@ const MESSAGES = [
   { text: 'We are gathering your health report', permanent: true },
   { text: 'Use the top right menu to navigate', targetHtmlId: 'top-menu' },
   { text: 'Manage your profile on the top left', targetHtmlId: 'profile-menu' },
-  { text: 'After checking the report, please take a look at the action plan' },
+  { text: "Don't forget to review the suggested action plan" },
+  { text: 'Please contact us if you have any questions', clear: true },
 ]
 
 function Loading() {
@@ -106,6 +107,9 @@ function Loading() {
     )
     const toVisible = window.setTimeout(() => {
       log('Phase: visible', currentMessageText)
+      if (currentMessage?.clear) {
+        setPermanentMessages([])
+      }
       if (currentMessagePermanent) {
         setPermanentMessages((existing) => {
           const alreadyAdded = existing.some(
@@ -154,6 +158,7 @@ function Loading() {
     }
   }, [
     activeMessages,
+    currentMessage?.clear,
     currentMessageText,
     currentMessagePermanent,
     isExcludedPage,

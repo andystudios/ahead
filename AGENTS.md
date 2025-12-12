@@ -18,7 +18,7 @@
 - Use 2-space indentation, single quotes in code, and trailing commas in multiline literals.
 - Keep component files PascalCased (e.g., `Loading.jsx`), modules snake/kebab only when matching directories.
 - Import shared helpers from `src/libs/*`; avoid duplicating utilities.
-- Keep styles scoped to components when possible; reuse existing class names before adding new ones.
+- Keep styles scoped to components when possible; reuse existing class names before adding new ones, and prefer a dedicated CSS file per component over inline styles.
 
 ## Testing Guidelines
 - Framework: Vitest with jsdom; tests live in `tests/` and mirror source filenames (e.g., `cookies.test.js` for `src/libs/cookies.js`).

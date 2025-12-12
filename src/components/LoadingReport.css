@@ -1,0 +1,63 @@
+.loading-report-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 600ms ease;
+  padding: 32px 32px 32px 60%;
+}
+
+.loading-report-overlay.fade-out {
+  opacity: 0;
+}
+
+.loading-report-message {
+  font-size: 16px;
+  line-height: 22px;
+  color: #2d2d2d;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.loading-report-message.fade-in,
+.loading-report-message.visible {
+  opacity: 1;
+}
+
+.loading-report-message.fade-out {
+  opacity: 0;
+}
+
+.loading-report-skip {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  padding: 10px 16px;
+  background: #121212;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.loading-report-skip:hover {
+  transform: translateY(-2px);
+}
+
+.loading-report-skip:active {
+  transform: translateY(0);
+  opacity: 0.85;
+}
+
+.loading-report-peek {
+  position: relative;
+  z-index: 10000;
+}
