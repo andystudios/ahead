@@ -1,10 +1,7 @@
-import './App.css'
+import Loading from './components/Loading'
 
 function App() {
-
-  return (
-    <></>
-  )
+  return <Loading />
 }
 
 export default App

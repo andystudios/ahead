@@ -1,0 +1,97 @@
+/* Full-screen white overlay to block page content while assets load */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  background: #ffffff;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 400ms ease;
+  padding: 32px;
+}
+
+.loading-logo {
+  width: 180px;
+  max-width: 50vw;
+  height: auto;
+  transform-origin: center;
+  animation: logo-grow 2s ease-out forwards;
+}
+
+.loading-messages {
+  position: relative;
+  width: 100%;
+}
+
+.loading-message {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  line-height: 22px;
+  color: #2d2d2d;
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+
+.loading-message.idle {
+  opacity: 0;
+}
+.loading-message.fade-in,
+.loading-message.visible {
+  opacity: 1;
+}
+
+.loading-message.fade-out {
+  opacity: 0;
+}
+
+.loading-message.permanent {
+  opacity: 1;
+  transition: none;
+}
+
+.loading-overlay.fade-out {
+  opacity: 0;
+}
+
+.loading-skip {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  padding: 10px 16px;
+  background: #121212;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.loading-skip:hover {
+  transform: translateY(-2px);
+}
+
+.loading-skip:active {
+  transform: translateY(0);
+  opacity: 0.85;
+}
+
+.loading-peek {
+  position: relative;
+  z-index: 10000;
+}
+
+@keyframes logo-grow {
+  0% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
