@@ -88,6 +88,11 @@
   z-index: 10000;
 }
 
+.reveal-toggle-button {
+  position: static;
+  inset: auto;
+  margin: 12px 0;
+}
 @keyframes logo-grow {
   0% {
     transform: scale(0.9);
