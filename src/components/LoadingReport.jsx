@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  LOADING_REPORT_FADE_IN_DURATION_MS,
+  LOADING_REPORT_FADE_OUT_DURATION_MS,
+  LOADING_REPORT_VISIBLE_DURATION_MS,
+} from '../libs/config'
 import './LoadingReport.css'
 
-export const FADE_IN_DURATION_MS = 600
-export const FADE_OUT_DURATION_MS = 900
-export const VISIBLE_DURATION_MS = 1600
 const PEEK_CLASS = 'loading-report-peek'
 const HIGHLIGHT_CLASS = 'loading-report-highlight'
 
@@ -52,7 +54,7 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
     setIsFading(true)
     fadeTimeoutRef.current = window.setTimeout(
       () => setIsMounted(false),
-      FADE_OUT_DURATION_MS,
+      LOADING_REPORT_FADE_OUT_DURATION_MS,
     )
   }, [])
 
@@ -76,11 +78,12 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
     )
     const toVisible = window.setTimeout(
       () => setMessagePhase('visible'),
-      FADE_IN_DURATION_MS,
+      LOADING_REPORT_FADE_IN_DURATION_MS,
     )
     const toFadeOut = window.setTimeout(
       () => setMessagePhase('fade-out'),
-      FADE_IN_DURATION_MS + VISIBLE_DURATION_MS,
+      LOADING_REPORT_FADE_IN_DURATION_MS +
+        LOADING_REPORT_VISIBLE_DURATION_MS,
     )
     const toNext = window.setTimeout(() => {
       const isLast = messageIndex >= safeMessages.length - 1
@@ -89,7 +92,10 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
       } else {
         setMessageIndex((idx) => Math.min(idx + 1, safeMessages.length - 1))
       }
-    }, FADE_IN_DURATION_MS + VISIBLE_DURATION_MS + FADE_OUT_DURATION_MS)
+    },
+    LOADING_REPORT_FADE_IN_DURATION_MS +
+      LOADING_REPORT_VISIBLE_DURATION_MS +
+      LOADING_REPORT_FADE_OUT_DURATION_MS)
 
     messageTimeoutsRef.current = [toFadeIn, toVisible, toFadeOut, toNext]
 

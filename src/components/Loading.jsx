@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Loading.css'
 import logo from '../assets/logo.svg'
-import { DISABLE_COOKIES } from '../libs/config'
+import {
+  DISABLE_COOKIES,
+  START_DELAY_MS,
+  FADE_IN_DURATION_MS,
+  FADE_OUT_DURATION_MS,
+  VISIBLE_DURATION_MS,
+  MESSAGE_LINE_STEP,
+} from '../libs/config'
 import { hasSeenIntroCookie, setIntroSeenCookie } from '../libs/cookies'
 
-const START_DELAY_MS = 1500
-const FADE_IN_DURATION_MS = 500
-const FADE_OUT_DURATION_MS = 1000
-const VISIBLE_DURATION_MS = 2000
-const MESSAGE_LINE_HEIGHT = 22
-const MESSAGE_LINE_GAP = 8
-const MESSAGE_LINE_STEP = MESSAGE_LINE_HEIGHT + MESSAGE_LINE_GAP
 const log = (...args) => console.log('[Loading]', ...args)
 
 const MESSAGES = [
