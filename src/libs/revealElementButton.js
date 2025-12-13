@@ -1,4 +1,6 @@
+import { SHOW_REVEAL_STATUS_MESSAGE } from './config'
 import { getRevealedElementIds, markElementRevealed } from './cookies'
+import { trackRevealClick } from './tracking'
 
 const DEFAULT_BUTTON_TEXT = 'Show content'
 const DEFAULT_BUTTON_CLASS = 'loading-skip reveal-toggle-button'
@@ -62,10 +64,31 @@ export const attachRevealElementButton = ({
   button.type = 'button'
   button.textContent = buttonText
   button.className = buttonClassName
+  const parent = target.parentElement || document.body
+
+  const revealTarget = () => {
+    target.style.display = target.dataset.originalDisplay ?? restoreDisplay
+    markElementRevealed(targetId)
+  }
+
   button.addEventListener('click', () => {
-    const aboveRangeCount = Array.from(target.querySelectorAll('*')).filter(
-      (el) => isAboveRangeText(el.textContent ?? ''),
-    ).length / duplicatedElementCorrection
+    trackRevealClick({
+      targetId,
+      buttonLabel: button.textContent ?? buttonText,
+      clickedAt: new Date(),
+    })
+
+    if (!SHOW_REVEAL_STATUS_MESSAGE) {
+      button.remove()
+      revealTarget()
+      return
+    }
+
+    const aboveRangeCount = Math.round(
+      Array.from(target.querySelectorAll('*')).filter((el) =>
+        isAboveRangeText(el.textContent ?? ''),
+      ).length / duplicatedElementCorrection,
+    )
 
     const message = document.createElement('div')
     message.className = 'reveal-status-message'
@@ -93,13 +116,11 @@ export const attachRevealElementButton = ({
       message.style.opacity = '0'
       window.setTimeout(() => {
         message.remove()
-        target.style.display = target.dataset.originalDisplay ?? restoreDisplay
-        markElementRevealed(targetId)
+        revealTarget()
       }, MESSAGE_FADE_DURATION_MS)
     }, MESSAGE_VISIBLE_DURATION_MS)
   })
 
-  const parent = target.parentElement || document.body
   parent.insertBefore(button, target)
 
   return button

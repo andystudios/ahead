@@ -2,6 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { attachRevealElementButton } from '../src/libs/revealElementButton'
 import { getRevealedElementIds } from '../src/libs/cookies'
 
+let showRevealStatusMessage = true
+const trackRevealClickMock = vi.fn()
+
+vi.mock('../src/libs/config', () => ({
+  get SHOW_REVEAL_STATUS_MESSAGE() {
+    return showRevealStatusMessage
+  },
+}))
+
+vi.mock('../src/libs/tracking', () => ({
+  trackRevealClick: (...args) => trackRevealClickMock(...args),
+}))
+
 const clearRevealCookie = () => {
   document.cookie =
     'revealed_elements=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;'
@@ -12,6 +25,8 @@ describe('attachRevealElementButton', () => {
     vi.useFakeTimers()
     document.body.innerHTML = ''
     clearRevealCookie()
+    showRevealStatusMessage = true
+    trackRevealClickMock.mockReset()
   })
 
   it('hides the target and renders a button', () => {
@@ -39,7 +54,7 @@ describe('attachRevealElementButton', () => {
 
     vi.runAllTimers()
 
-    expect(target.style.display).toBe('')
+    expect(target.style.display).toBe('block')
     expect(getRevealedElementIds()).toContain('secret')
     expect(document.querySelector('button')).toBeNull()
   })
@@ -59,6 +74,26 @@ describe('attachRevealElementButton', () => {
     expect(getRevealedElementIds()).toContain('secret')
   })
 
+  it('tracks reveal clicks with button metadata', () => {
+    const now = new Date('2024-05-15T12:30:00Z')
+    vi.setSystemTime(now)
+    const target = document.createElement('div')
+    target.id = 'secret'
+    document.body.appendChild(target)
+
+    const button = attachRevealElementButton({
+      targetId: 'secret',
+      buttonText: 'Reveal me',
+    })
+    button?.click()
+
+    expect(trackRevealClickMock).toHaveBeenCalledWith({
+      targetId: 'secret',
+      buttonLabel: 'Reveal me',
+      clickedAt: now,
+    })
+  })
+
   it('shows status message with above-range count before reveal', () => {
     const target = document.createElement('div')
     target.id = 'secret'
@@ -71,7 +106,7 @@ describe('attachRevealElementButton', () => {
     button?.click()
 
     const message = document.querySelector('.reveal-status-message')
-    expect(message?.textContent).toContain('1 values above range')
+    expect(message?.textContent).toContain('1 values out of range')
     // Before timers run, target remains hidden
     expect(target.style.display).toBe('none')
 
@@ -91,10 +126,25 @@ describe('attachRevealElementButton', () => {
     button?.click()
 
     const message = document.querySelector('.reveal-status-message')
-    expect(message?.textContent).toContain('1 values above range')
+    expect(message?.textContent).toContain('1 values out of range')
 
     vi.runAllTimers()
     expect(target.style.display).not.toBe('none')
+  })
+
+  it('reveals immediately when status messages are disabled', () => {
+    showRevealStatusMessage = false
+    const target = document.createElement('div')
+    target.id = 'secret'
+    document.body.appendChild(target)
+
+    const button = attachRevealElementButton({ targetId: 'secret' })
+    button?.click()
+
+    expect(document.querySelector('.reveal-status-message')).toBeNull()
+    expect(target.style.display).toBe('block')
+    expect(getRevealedElementIds()).toContain('secret')
+    expect(document.querySelector('button')).toBeNull()
   })
 
   it('keeps the target visible when already revealed', () => {
@@ -108,6 +158,6 @@ describe('attachRevealElementButton', () => {
     const button = attachRevealElementButton({ targetId: 'secret' })
 
     expect(button).toBeNull()
-    expect(target.style.display).toBe('')
+    expect(target.style.display).toBe('block')
   })
 })
