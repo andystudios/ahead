@@ -39,6 +39,23 @@
   transition: opacity 800ms ease;
 }
 
+.loading-message.dimmed {
+  color: #8a8a8a;
+  transition: opacity 800ms ease, color 400ms ease;
+}
+
+.loading-message.clearing {
+  opacity: 0;
+}
+.loading-message.clearing {
+  opacity: 0;
+}
+
+.loading-message.dimmed {
+  color: #8a8a8a;
+  transition: opacity 800ms ease, color 400ms ease;
+}
+
 .loading-message.idle {
   opacity: 0;
 }

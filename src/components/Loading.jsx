@@ -14,13 +14,15 @@ import { trackMissingTarget, trackSkipEvent } from '../libs/tracking'
 
 const log = (...args) => console.log('[Loading]', ...args)
 
+const MAX_MESSAGE_LINES = 5
+const MAX_PERMANENT_MESSAGES = MAX_MESSAGE_LINES - 1
+
 const MESSAGES = [
   { text: 'Welcome to Ahead, Andres', always: true },
   { text: 'We are gathering your health report', permanent: true },
-  { text: 'Use the top right menu to navigate', targetHtmlId: 'top-menu' },
-  { text: 'Manage your profile on the top left', targetHtmlId: 'profile-menu' },
-  { text: "Don't forget to review the suggested action plan" },
-  { text: 'Please contact us if you have any questions', clear: true },
+  { text: 'Use the top left menu to navigate', targetHtmlId: 'top-menu' },
+  { text: 'Manage your profile on the top right', targetHtmlId: 'profile-menu' },
+  { text: 'Please contact us if you have any questions', clear: true }
 ]
 
 function Loading() {
@@ -34,6 +36,7 @@ function Loading() {
   )
   const [isMounted, setIsMounted] = useState(true)
   const [isFading, setIsFading] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [messageIndex, setMessageIndex] = useState(0)
   const [messagePhase, setMessagePhase] = useState('idle')
   const [permanentMessages, setPermanentMessages] = useState([])
@@ -98,25 +101,24 @@ function Loading() {
 
     window.setTimeout(() => setMessagePhase('idle'), 0)
     const delay = safeMessageIndex === 0 ? START_DELAY_MS : 0
+    const clearDelay = currentMessage?.clear ? FADE_OUT_DURATION_MS : 0
 
     const toFadeIn = window.setTimeout(
       () => {
         log('Phase: fade-in', currentMessageText)
         setMessagePhase('fade-in')
       },
-      delay,
+      delay + clearDelay,
     )
     const toVisible = window.setTimeout(() => {
       log('Phase: visible', currentMessageText)
-      if (currentMessage?.clear) {
-        setPermanentMessages([])
-      }
       if (currentMessagePermanent) {
         setPermanentMessages((existing) => {
           const alreadyAdded = existing.some(
             (msg) => msg.id === safeMessageIndex,
           )
           if (alreadyAdded) return existing
+          if (existing.length >= MAX_PERMANENT_MESSAGES) return existing
           return [
             ...existing,
             {
@@ -127,13 +129,13 @@ function Loading() {
         })
       }
       setMessagePhase('visible')
-    }, delay + FADE_IN_DURATION_MS)
+    }, delay + clearDelay + FADE_IN_DURATION_MS)
     const toFadeOut = window.setTimeout(
       () => {
         log('Phase: fade-out', currentMessageText)
         setMessagePhase('fade-out')
       },
-      delay + FADE_IN_DURATION_MS + VISIBLE_DURATION_MS,
+      delay + clearDelay + FADE_IN_DURATION_MS + VISIBLE_DURATION_MS,
     )
     const toNext = window.setTimeout(() => {
       const isLast = safeMessageIndex >= activeMessages.length - 1
@@ -149,9 +151,29 @@ function Loading() {
         log('Advancing to message', safeMessageIndex + 1)
         setMessageIndex((idx) => Math.min(idx + 1, activeMessages.length - 1))
       }
-    }, delay + FADE_IN_DURATION_MS + VISIBLE_DURATION_MS + FADE_OUT_DURATION_MS)
+    }, delay + clearDelay + FADE_IN_DURATION_MS + VISIBLE_DURATION_MS + FADE_OUT_DURATION_MS)
 
-    messageTimeoutsRef.current = [toFadeIn, toVisible, toFadeOut, toNext]
+    const toStartClear =
+      currentMessage?.clear &&
+      window.setTimeout(() => {
+        setIsClearing(true)
+      }, delay)
+
+    const toClear =
+      currentMessage?.clear &&
+      window.setTimeout(() => {
+        setPermanentMessages([])
+        setIsClearing(false)
+      }, delay + clearDelay)
+
+    messageTimeoutsRef.current = [
+      toStartClear,
+      toFadeIn,
+      toVisible,
+      toFadeOut,
+      toNext,
+      toClear,
+    ].filter(Boolean)
 
     return () => {
       messageTimeoutsRef.current.forEach(clearTimeout)
@@ -227,15 +249,35 @@ function Loading() {
     safeMessageIndex,
   ])
 
+  useEffect(() => {
+    if (!isFading) return undefined
+    if (fadeTimeoutRef.current) return undefined
+
+    const timeout = window.setTimeout(() => {
+      setIsMounted(false)
+      fadeTimeoutRef.current = undefined
+    }, FADE_OUT_DURATION_MS)
+    fadeTimeoutRef.current = timeout
+
+    return () => {
+      if (fadeTimeoutRef.current === timeout) {
+        window.clearTimeout(timeout)
+        fadeTimeoutRef.current = undefined
+      }
+    }
+  }, [isFading])
+
   const isCurrentPermanentPinned = permanentMessages.some(
     (msg) => msg.id === safeMessageIndex,
   )
   const shouldRenderCurrent =
     currentMessage && (!currentMessage.permanent || !isCurrentPermanentPinned)
-  const messagesMinHeight = Math.max(
-    (permanentMessages.length + 1) * MESSAGE_LINE_STEP,
-    MESSAGE_LINE_STEP,
+  const messagesMinHeight = MAX_MESSAGE_LINES * MESSAGE_LINE_STEP
+  const currentLineIndex = Math.min(
+    permanentMessages.length,
+    MAX_MESSAGE_LINES - 1,
   )
+  const shouldDimNonCurrentLines = currentMessagePermanent
 
   const handleSkip = () => {
     log('Skip clicked; fading out and marking intro seen')
@@ -270,7 +312,11 @@ function Loading() {
         {permanentMessages.map((msg, idx) => (
           <div
             key={`permanent-${msg.id}`}
-            className="loading-message permanent visible"
+            className={`loading-message permanent visible${
+              shouldDimNonCurrentLines && msg.id !== safeMessageIndex
+                ? ' dimmed'
+                : ''
+            }${isClearing ? ' clearing' : ''}`}
             style={{ top: `${idx * MESSAGE_LINE_STEP}px` }}
           >
             {msg.text}
@@ -280,7 +326,7 @@ function Loading() {
           <div
             className={`loading-message ${messagePhase}`}
             style={{
-              top: `${permanentMessages.length * MESSAGE_LINE_STEP}px`,
+              top: `${currentLineIndex * MESSAGE_LINE_STEP}px`,
             }}
           >
             {currentMessage?.text}

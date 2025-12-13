@@ -21,6 +21,7 @@ const DEFAULT_MESSAGES = [
   { text: 'Each part of your body can be selected here', targetHtmlId: 'system-navigation' },
   { text: 'Grey areas indicate you should pay attention', targetHtmlId: 'system-navigation', highlightClass: 'bg-aubergine-500' },
   { text: 'Filter the results if you need', targetHtmlId: 'report-filters' },
+  { text: 'Ready' },
 ]
 
 function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
@@ -57,9 +58,40 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const topMenu = document.getElementById('top-menu')
+    const profileMenu = document.getElementById('profile-menu')
+    const reportSelector = document.getElementById('report-selector')
+    const restored = []
+
+    const elevateElement = (el) => {
+      if (!el) return
+      const prev = {
+        el,
+        display: el.style.display,
+        position: el.style.position,
+        zIndex: el.style.zIndex,
+      }
+      restored.push(prev)
+      el.style.display = ''
+      if (getComputedStyle(el).position === 'static') {
+        el.style.position = 'relative'
+      }
+      el.style.zIndex = '10001'
+    }
+
+    elevateElement(topMenu)
+    elevateElement(profileMenu)
+    elevateElement(reportSelector)
 
     return () => {
       document.body.style.overflow = previousOverflow
+      restored.forEach(({ el, display, position, zIndex }) => {
+        if (el) {
+          el.style.display = display
+          el.style.position = position
+          el.style.zIndex = zIndex
+        }
+      })
     }
   }, [isMounted])
 
@@ -147,20 +179,30 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   useEffect(() => {
     if (!isMounted) return undefined
     if (!currentHighlightClass) return undefined
-    if (messagePhase !== 'visible') return undefined
 
     const highlightedNodes = Array.from(
       document.getElementsByClassName(currentHighlightClass),
     )
 
-    highlightedNodes.forEach((el) => {
-      el.classList.add(HIGHLIGHT_CLASS)
-    })
-    if (SHOW_LOADING_REPORT_INCREMENTAL) return undefined
-    return () =>
+    const addHighlight = () => {
+      highlightedNodes.forEach((el) => {
+        el.classList.add(HIGHLIGHT_CLASS)
+      })
+    }
+
+    const removeHighlight = () => {
       highlightedNodes.forEach((el) => {
         el.classList.remove(HIGHLIGHT_CLASS)
       })
+    }
+
+    if (messagePhase === 'visible') {
+      addHighlight()
+    } else {
+      removeHighlight()
+    }
+
+    return removeHighlight
   }, [currentHighlightClass, isMounted, messagePhase])
 
   useEffect(
