@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { attachRevealElementButton } from '../src/libs/revealElementButton'
 import { getRevealedElementIds } from '../src/libs/cookies'
 
@@ -9,6 +9,7 @@ const clearRevealCookie = () => {
 
 describe('attachRevealElementButton', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     document.body.innerHTML = ''
     clearRevealCookie()
   })
@@ -36,6 +37,8 @@ describe('attachRevealElementButton', () => {
     const button = attachRevealElementButton({ targetId: 'secret' })
     button?.click()
 
+    vi.runAllTimers()
+
     expect(target.style.display).toBe('')
     expect(getRevealedElementIds()).toContain('secret')
     expect(document.querySelector('button')).toBeNull()
@@ -50,8 +53,48 @@ describe('attachRevealElementButton', () => {
     const button = attachRevealElementButton({ targetId: 'secret' })
     button?.click()
 
+    vi.runAllTimers()
+
     expect(target.style.display).toBe('block')
     expect(getRevealedElementIds()).toContain('secret')
+  })
+
+  it('shows status message with above-range count before reveal', () => {
+    const target = document.createElement('div')
+    target.id = 'secret'
+    const badge = document.createElement('span')
+    badge.textContent = 'Above range'
+    target.appendChild(badge)
+    document.body.appendChild(target)
+
+    const button = attachRevealElementButton({ targetId: 'secret' })
+    button?.click()
+
+    const message = document.querySelector('.reveal-status-message')
+    expect(message?.textContent).toContain('1 values above range')
+    // Before timers run, target remains hidden
+    expect(target.style.display).toBe('none')
+
+    vi.runAllTimers()
+    expect(target.style.display).not.toBe('none')
+  })
+
+  it('treats Mild-risk as above range', () => {
+    const target = document.createElement('div')
+    target.id = 'secret'
+    const badge = document.createElement('span')
+    badge.textContent = 'Mild-risk'
+    target.appendChild(badge)
+    document.body.appendChild(target)
+
+    const button = attachRevealElementButton({ targetId: 'secret' })
+    button?.click()
+
+    const message = document.querySelector('.reveal-status-message')
+    expect(message?.textContent).toContain('1 values above range')
+
+    vi.runAllTimers()
+    expect(target.style.display).not.toBe('none')
   })
 
   it('keeps the target visible when already revealed', () => {
