@@ -9,6 +9,7 @@ import {
   getRevealClickEvents,
   getSkipEvents,
 } from './libs/tracking'
+import { attachScrollHeadingLogger } from './libs/scroll'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -56,6 +57,8 @@ if (typeof document !== 'undefined') {
 }
 
 if (typeof window !== 'undefined') {
+  attachScrollHeadingLogger()
+
   window.showLog = () => {
     const reveal = getRevealClickEvents()
     const missing = getMissingTargetEvents()
