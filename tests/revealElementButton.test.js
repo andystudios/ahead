@@ -127,9 +127,27 @@ describe('attachRevealElementButton', () => {
 
     const message = document.querySelector('.reveal-status-message')
     expect(message?.textContent).toContain('1 values out of range')
+    const warningIcon = button?.querySelector('.reveal-warning-icon')
+    expect(warningIcon?.classList.contains('mild-risk')).toBe(true)
+    expect(warningIcon?.style.background).toContain('var(--color-rust-50)')
 
     vi.runAllTimers()
     expect(target.style.display).not.toBe('none')
+  })
+
+  it('shows a warning icon on the button when above-range content exists', () => {
+    const target = document.createElement('div')
+    target.id = 'secret'
+    const badge = document.createElement('span')
+    badge.textContent = 'Above range'
+    target.appendChild(badge)
+    document.body.appendChild(target)
+
+    const button = attachRevealElementButton({ targetId: 'secret' })
+
+    const warningIcon = button?.querySelector('.reveal-warning-icon')
+    expect(warningIcon?.textContent).toBe('!')
+    expect(warningIcon?.getAttribute('aria-hidden')).toBe('true')
   })
 
   it('reveals immediately when status messages are disabled', () => {

@@ -93,6 +93,12 @@
   inset: auto;
   margin: 12px 0;
 }
+
+@media print {
+  .reveal-warning-icon.mild-risk {
+    background: var(--color-rust-100) !important;
+  }
+}
 @keyframes logo-grow {
   0% {
     transform: scale(0.9);
