@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   LOADING_REPORT_FADE_IN_DURATION_MS,
   LOADING_REPORT_FADE_OUT_DURATION_MS,
   LOADING_REPORT_VISIBLE_DURATION_MS,
 } from '../libs/config'
+import { trackMissingTarget, trackSkipEvent } from '../libs/tracking'
 import './LoadingReport.css'
 
 const PEEK_CLASS = 'loading-report-peek'
@@ -61,6 +62,7 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   const handleSkip = () => {
     messageTimeoutsRef.current.forEach(clearTimeout)
     messageTimeoutsRef.current = []
+    trackSkipEvent({ source: 'LoadingReport' })
     handleFinish()
   }
 
@@ -113,6 +115,12 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
       console.error(
         `[LoadingReport] targetHtmlId "${currentTargetId}" not found`,
       )
+      trackMissingTarget({
+        source: 'LoadingReport',
+        targetId: currentTargetId,
+        message: currentMessage?.text,
+        messageIndex,
+      })
       return undefined
     }
 

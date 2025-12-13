@@ -1,9 +1,14 @@
-import { StrictMode } from 'react'
+import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import LoadingReport from './components/LoadingReport.jsx'
 import Loading from './components/Loading.jsx'
 import { DISABLE_LOADING_MESSAGES } from './libs/config'
 import { attachRevealElementButton } from './libs/revealElementButton'
+import {
+  getMissingTargetEvents,
+  getRevealClickEvents,
+  getSkipEvents,
+} from './libs/tracking'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -47,5 +52,32 @@ if (typeof document !== 'undefined') {
     })
   } else {
     initRevealButtons()
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.showLog = () => {
+    const reveal = getRevealClickEvents()
+    const missing = getMissingTargetEvents()
+    const skips = getSkipEvents()
+
+    const openGroup =
+      console.groupCollapsed || console.group || console.log.bind(console)
+    const closeGroup = console.groupEnd || (() => {})
+    const logTable = console.table || console.log.bind(console)
+
+    openGroup('[Tracking] reveal clicks')
+    logTable(reveal)
+    closeGroup()
+
+    openGroup('[Tracking] missing targets')
+    logTable(missing)
+    closeGroup()
+
+    openGroup('[Tracking] skip events')
+    logTable(skips)
+    closeGroup()
+
+    return { reveal, missing, skips }
   }
 }

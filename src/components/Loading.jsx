@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Loading.css'
 import logo from '../assets/logo.svg'
 import {
@@ -10,6 +10,7 @@ import {
   MESSAGE_LINE_STEP,
 } from '../libs/config'
 import { hasSeenIntroCookie, setIntroSeenCookie } from '../libs/cookies'
+import { trackMissingTarget, trackSkipEvent } from '../libs/tracking'
 
 const log = (...args) => console.log('[Loading]', ...args)
 
@@ -189,6 +190,12 @@ function Loading() {
       console.error(
         `[Loading] targetHtmlId "${targetId}" not found; skipping message.`,
       )
+      trackMissingTarget({
+        source: 'Loading',
+        targetId,
+        message: currentMessageText,
+        messageIndex: safeMessageIndex,
+      })
       // Stop any in-flight timers for the current message
       messageTimeoutsRef.current.forEach(clearTimeout)
       messageTimeoutsRef.current = []
@@ -235,6 +242,7 @@ function Loading() {
     messageTimeoutsRef.current.forEach(clearTimeout)
     messageTimeoutsRef.current = []
 
+    trackSkipEvent({ source: 'Loading' })
     markIntroSeen()
     setIsFading(true)
     fadeTimeoutRef.current = window.setTimeout(
