@@ -42,9 +42,10 @@ export const getRevealedElementIds = () => {
   try {
     const parsed = JSON.parse(decodeURIComponent(raw))
     if (!Array.isArray(parsed)) return []
-    return parsed
+    const filtered = parsed
       .filter((id) => typeof id === 'string' && id.trim().length > 0)
       .map((id) => id.trim())
+    return Array.from(new Set(filtered))
   } catch {
     return []
   }
