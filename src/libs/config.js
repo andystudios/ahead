@@ -1,6 +1,7 @@
 export const DISABLE_COOKIES = false
-export const DISABLE_LOADING_MESSAGES = true
+export const DISABLE_LOADING_MESSAGES = false
 export const SHOW_REVEAL_STATUS_MESSAGE = true
+export const SHOW_LOADING_REPORT_INCREMENTAL = false
 
 // Loading intro overlay timings
 export const START_DELAY_MS = 1500

@@ -1,4 +1,5 @@
 const INTRO_COOKIE_KEY = 'intro_seen'
+const REPORT_INTRO_COOKIE_KEY = 'report_intro_seen'
 const REVEALED_ELEMENTS_COOKIE_KEY = 'revealed_elements'
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
 
@@ -22,6 +23,16 @@ export const hasSeenIntroCookie = () =>
 
 export const setIntroSeenCookie = () => {
   writeCookieValue(INTRO_COOKIE_KEY, 'true')
+}
+
+export const hasSeenReportIntroCookie = () =>
+  document.cookie
+    .split(';')
+    .map((c) => c.trim())
+    .some((c) => c.startsWith(`${REPORT_INTRO_COOKIE_KEY}=`))
+
+export const setReportIntroSeenCookie = () => {
+  writeCookieValue(REPORT_INTRO_COOKIE_KEY, 'true')
 }
 
 export const getRevealedElementIds = () => {

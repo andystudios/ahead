@@ -3,7 +3,13 @@ import {
   LOADING_REPORT_FADE_IN_DURATION_MS,
   LOADING_REPORT_FADE_OUT_DURATION_MS,
   LOADING_REPORT_VISIBLE_DURATION_MS,
+  SHOW_LOADING_REPORT_INCREMENTAL,
+  DISABLE_COOKIES,
 } from '../libs/config'
+import {
+  hasSeenReportIntroCookie,
+  setReportIntroSeenCookie,
+} from '../libs/cookies'
 import { trackMissingTarget, trackSkipEvent } from '../libs/tracking'
 import './LoadingReport.css'
 
@@ -21,8 +27,14 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   const isReportPage =
     typeof window !== 'undefined' &&
     window.location.pathname.endsWith('report.html')
+  const shouldSkipForCookie =
+    !DISABLE_COOKIES && typeof document !== 'undefined'
+      ? hasSeenReportIntroCookie()
+      : false
 
-  const [isMounted, setIsMounted] = useState(isReportPage)
+  const [isMounted, setIsMounted] = useState(
+    isReportPage && !shouldSkipForCookie,
+  )
   const [isFading, setIsFading] = useState(false)
   const [messageIndex, setMessageIndex] = useState(0)
   const [messagePhase, setMessagePhase] = useState('idle')
@@ -52,6 +64,9 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   }, [isMounted])
 
   const handleFinish = useCallback(() => {
+    if (!DISABLE_COOKIES) {
+      setReportIntroSeenCookie()
+    }
     setIsFading(true)
     fadeTimeoutRef.current = window.setTimeout(
       () => setIsMounted(false),
@@ -125,8 +140,9 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
     }
 
     targetEl.classList.add(PEEK_CLASS)
+    if (SHOW_LOADING_REPORT_INCREMENTAL) return undefined
     return () => targetEl.classList.remove(PEEK_CLASS)
-  }, [currentTargetId, isMounted])
+  }, [currentTargetId, currentMessage?.text, isMounted, messageIndex])
 
   useEffect(() => {
     if (!isMounted) return undefined
@@ -140,6 +156,7 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
     highlightedNodes.forEach((el) => {
       el.classList.add(HIGHLIGHT_CLASS)
     })
+    if (SHOW_LOADING_REPORT_INCREMENTAL) return undefined
     return () =>
       highlightedNodes.forEach((el) => {
         el.classList.remove(HIGHLIGHT_CLASS)

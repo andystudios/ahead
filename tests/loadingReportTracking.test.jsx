@@ -13,6 +13,7 @@ describe('LoadingReport tracking', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     window.history.pushState({}, '', '/report.html')
+    document.cookie = 'report_intro_seen=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;'
   })
 
   afterEach(() => {
@@ -69,5 +70,38 @@ describe('LoadingReport tracking', () => {
     })
 
     expect(trackSpy).toHaveBeenCalledWith({ source: 'LoadingReport' })
+    expect(document.cookie.includes('report_intro_seen=')).toBe(true)
+  })
+
+  it('sets report intro cookie after finishing messages', () => {
+    const target = document.createElement('div')
+    target.id = 'report-selector'
+    document.body.appendChild(target)
+    root = createRoot(container)
+    act(() => {
+      root.render(
+        <LoadingReport
+          messages={[
+            { text: 'Done', targetHtmlId: 'report-selector' },
+          ]}
+        />,
+      )
+    })
+
+    act(() => {
+      vi.runAllTimers()
+    })
+
+    expect(document.cookie.includes('report_intro_seen=')).toBe(true)
+  })
+
+  it('skips overlay when report intro cookie already exists', () => {
+    document.cookie = 'report_intro_seen=true; path=/;'
+    root = createRoot(container)
+    act(() => {
+      root.render(<LoadingReport />)
+    })
+
+    expect(container.querySelector('.loading-report-overlay')).toBeNull()
   })
 })
