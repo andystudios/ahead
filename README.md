@@ -8,7 +8,12 @@
   
 ## ORIGINAL SET UP:
 
-* Mock the full report page.
+* Mock the full report page with Antigravity.
+* Hardcoded HTML, no React integration.
+
+## HOW TO TEST:
+
+* Please clean the cookies for the domain to see the onboarding again. Each time the user sees the onboarding or modals, a cookie is set to avoid showing it again or in the same way.
 
 ## FEATURES:
 
@@ -38,9 +43,17 @@
   * We track how many users click on them.
   * The button shows an explanation based on the content.
   
+* Info modals:
+  * The modals explain complex concepts in the report (Based on task appendix).
+  * We track with cookies if the user saw them, and use tracking.js to track how many users open them.
+  * Added info icons next to complex concepts to open the modals.
+
 * Scroll feature:
   * Based on the scroll position, we highlight the menu items.
   * This was a mistake of me, my mock didn't have this feature and I added it before realizing it's like this in prod.
+  * Since I had the scroll information I added the a concept:
+    * If the user reach the blood results and he never has seen the blood results modal we display a message offering the info.
+    * This message is only visible if the user has not seen the blood results modal yet.
 
 ## TODO:
 
