@@ -1,4 +1,4 @@
-import React, { StrictMode } from 'react'
+import React, { StrictMode, useCallback, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import LoadingReport from './components/LoadingReport.jsx'
 import Loading from './components/Loading.jsx'
@@ -10,17 +10,42 @@ import {
   getSkipEvents,
 } from './libs/tracking'
 import { attachScrollHeadingLogger } from './libs/scroll'
+import {
+  attachBloodInfoTriggers,
+  attachImageInfoTriggers,
+  attachRadiologyInfoTriggers,
+} from './libs/prepareInfoModal.jsx'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    {!DISABLE_LOADING_MESSAGES && (
-      <>
-        <LoadingReport />
-        <Loading />
-      </>
-    )}
-  </StrictMode>,
-)
+function Root() {
+  const [showLoading, setShowLoading] = useState(!DISABLE_LOADING_MESSAGES)
+  const [showLoadingReport, setShowLoadingReport] = useState(
+    !DISABLE_LOADING_MESSAGES,
+  )
+
+  const handleLoadingFinish = useCallback(() => {
+    setShowLoading(false)
+  }, [])
+
+  const handleLoadingReportFinish = useCallback(() => {
+    setShowLoadingReport(false)
+  }, [])
+
+  return (
+    <StrictMode>
+      {!DISABLE_LOADING_MESSAGES && (
+        <>
+          {showLoadingReport && (
+            <LoadingReport onFinish={handleLoadingReportFinish} />
+          )}
+          {showLoading && <Loading onFinish={handleLoadingFinish} />}
+        </>
+      )}
+    </StrictMode>
+  )
+}
+
+createRoot(document.getElementById('root')).render(<Root />)
+export default Root
 
 const initRevealButtons = () => {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
@@ -48,11 +73,23 @@ const initRevealButtons = () => {
 
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initRevealButtons, {
-      once: true,
-    })
+    document.addEventListener(
+      'DOMContentLoaded',
+      () => {
+        initRevealButtons()
+        attachBloodInfoTriggers()
+        attachImageInfoTriggers()
+        attachRadiologyInfoTriggers()
+      },
+      {
+        once: true,
+      },
+    )
   } else {
     initRevealButtons()
+    attachBloodInfoTriggers()
+    attachImageInfoTriggers()
+    attachRadiologyInfoTriggers()
   }
 }
 

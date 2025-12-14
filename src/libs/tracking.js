@@ -1,6 +1,7 @@
 const revealClickEvents = []
 const missingTargetEvents = []
 const skipEvents = []
+const modalOpenEvents = []
 
 // Track when a reveal button is clicked for later inspection/telemetry.
 // Accepts a target identifier, optional button label, and timestamp.
@@ -62,4 +63,24 @@ export const getSkipEvents = () => [...skipEvents]
 
 export const clearSkipEvents = () => {
   skipEvents.length = 0
+}
+
+export const trackModalOpened = ({
+  modalId,
+  source,
+  openedAt = new Date(),
+} = {}) => {
+  const event = {
+    modalId: modalId ?? '',
+    source: source ?? '',
+    openedAt,
+  }
+  modalOpenEvents.push(event)
+  return event
+}
+
+export const getModalOpenEvents = () => [...modalOpenEvents]
+
+export const clearModalOpenEvents = () => {
+  modalOpenEvents.length = 0
 }

@@ -1,6 +1,7 @@
 const INTRO_COOKIE_KEY = 'intro_seen'
 const REPORT_INTRO_COOKIE_KEY = 'report_intro_seen'
 const REVEALED_ELEMENTS_COOKIE_KEY = 'revealed_elements'
+const INFO_MODAL_COOKIE_PREFIX = 'info_modal_seen_'
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
 
 const readCookieValue = (key) =>
@@ -57,4 +58,24 @@ export const markElementRevealed = (id) => {
   existing.add(id)
   const serialized = encodeURIComponent(JSON.stringify(Array.from(existing)))
   writeCookieValue(REVEALED_ELEMENTS_COOKIE_KEY, serialized)
+}
+
+const modalCookieKey = (modalId) => {
+  if (!modalId) return null
+  return `${INFO_MODAL_COOKIE_PREFIX}${modalId}`
+}
+
+export const hasSeenInfoModal = (modalId) => {
+  const key = modalCookieKey(modalId)
+  if (!key) return false
+  return document.cookie
+    .split(';')
+    .map((c) => c.trim())
+    .some((c) => c.startsWith(`${key}=`))
+}
+
+export const setInfoModalSeen = (modalId) => {
+  const key = modalCookieKey(modalId)
+  if (!key) return
+  writeCookieValue(key, 'true')
 }

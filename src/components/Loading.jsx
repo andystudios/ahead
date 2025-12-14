@@ -22,10 +22,10 @@ const MESSAGES = [
   { text: 'We are gathering your health report', permanent: true },
   { text: 'Use the top left menu to navigate', targetHtmlId: 'top-menu' },
   { text: 'Manage your profile on the top right', targetHtmlId: 'profile-menu' },
-  { text: 'Please contact us if you have any questions', clear: true }
+  { text: 'Please contact us if you have any questions', clear: true },
 ]
 
-function Loading() {
+function Loading({ onFinish }) {
   const isExcludedPage =
     typeof window !== 'undefined' &&
     (window.location.pathname.endsWith('report.html') ||
@@ -42,6 +42,7 @@ function Loading() {
   const [permanentMessages, setPermanentMessages] = useState([])
   const fadeTimeoutRef = useRef()
   const messageTimeoutsRef = useRef([])
+  const hasFinishedRef = useRef(false)
   const activeMessages = useMemo(() => {
     if (hasSeenIntro) return MESSAGES.filter((msg) => msg.always)
     return MESSAGES
@@ -77,6 +78,30 @@ function Loading() {
     log('Marking intro as seen in cookie')
     setIntroSeenCookie()
   }, [hasSeenIntro])
+
+  const notifyFinish = useCallback(() => {
+    if (hasFinishedRef.current) return
+    hasFinishedRef.current = true
+    onFinish?.()
+  }, [onFinish])
+
+  const startFadeOut = useCallback(() => {
+    if (fadeTimeoutRef.current) return
+    setIsFading(true)
+    fadeTimeoutRef.current = window.setTimeout(() => {
+      setIsMounted(false)
+      notifyFinish()
+    }, FADE_OUT_DURATION_MS)
+  }, [notifyFinish])
+
+  useEffect(() => {
+    if (!isExcludedPage) return undefined
+    const timeout = window.setTimeout(() => {
+      setIsMounted(false)
+      notifyFinish()
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [isExcludedPage, notifyFinish])
 
   useEffect(() => {
     // Lock body scroll while overlay is mounted; restore on cleanup.
@@ -142,11 +167,7 @@ function Loading() {
       if (isLast) {
         log('Last message reached; fading out')
         markIntroSeen()
-        setIsFading(true)
-        fadeTimeoutRef.current = window.setTimeout(
-          () => setIsMounted(false),
-          FADE_OUT_DURATION_MS,
-        )
+        startFadeOut()
       } else {
         log('Advancing to message', safeMessageIndex + 1)
         setMessageIndex((idx) => Math.min(idx + 1, activeMessages.length - 1))
@@ -177,7 +198,10 @@ function Loading() {
 
     return () => {
       messageTimeoutsRef.current.forEach(clearTimeout)
-      window.clearTimeout(fadeTimeoutRef.current)
+      if (fadeTimeoutRef.current) {
+        window.clearTimeout(fadeTimeoutRef.current)
+        fadeTimeoutRef.current = undefined
+      }
     }
   }, [
     activeMessages,
@@ -188,6 +212,7 @@ function Loading() {
     isFading,
     markIntroSeen,
     messageIndex,
+    startFadeOut,
     safeMessageIndex,
   ])
 
@@ -226,14 +251,10 @@ function Loading() {
       window.setTimeout(() => {
         if (isLast) {
           markIntroSeen()
-          setIsFading(true)
-          fadeTimeoutRef.current = window.setTimeout(
-          () => setIsMounted(false),
-          FADE_OUT_DURATION_MS,
-        )
-      } else {
-        setMessageIndex((idx) => Math.min(idx + 1, activeMessages.length - 1))
-      }
+          startFadeOut()
+        } else {
+          setMessageIndex((idx) => Math.min(idx + 1, activeMessages.length - 1))
+        }
       }, 0)
     }
     return undefined
@@ -246,6 +267,7 @@ function Loading() {
     isExcludedPage,
     markIntroSeen,
     messageIndex,
+    startFadeOut,
     safeMessageIndex,
   ])
 
@@ -255,6 +277,7 @@ function Loading() {
 
     const timeout = window.setTimeout(() => {
       setIsMounted(false)
+      notifyFinish()
       fadeTimeoutRef.current = undefined
     }, FADE_OUT_DURATION_MS)
     fadeTimeoutRef.current = timeout
@@ -265,7 +288,7 @@ function Loading() {
         fadeTimeoutRef.current = undefined
       }
     }
-  }, [isFading])
+  }, [isFading, notifyFinish])
 
   const isCurrentPermanentPinned = permanentMessages.some(
     (msg) => msg.id === safeMessageIndex,
@@ -286,11 +309,7 @@ function Loading() {
 
     trackSkipEvent({ source: 'Loading' })
     markIntroSeen()
-    setIsFading(true)
-    fadeTimeoutRef.current = window.setTimeout(
-      () => setIsMounted(false),
-      FADE_OUT_DURATION_MS,
-    )
+    startFadeOut()
   }
 
   if (!isMounted) return null

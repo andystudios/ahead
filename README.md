@@ -52,6 +52,8 @@
 * User could press a button to skip each step of the tutorial.
 * User could see the tutorial again.
 
+* Same modal windows.
+
 ## Different:
 
 * Different types of users (new, returning, power users) could have different set of messages.

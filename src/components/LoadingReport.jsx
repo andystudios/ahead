@@ -24,7 +24,7 @@ const DEFAULT_MESSAGES = [
   { text: 'Ready' },
 ]
 
-function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
+function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass, onFinish }) {
   const isReportPage =
     typeof window !== 'undefined' &&
     window.location.pathname.endsWith('report.html')
@@ -41,17 +41,44 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   const [messagePhase, setMessagePhase] = useState('idle')
   const messageTimeoutsRef = useRef([])
   const fadeTimeoutRef = useRef()
+  const hasFinishedRef = useRef(false)
 
   const safeMessages = useMemo(() => messages ?? [], [messages])
   const currentMessage = safeMessages[messageIndex]
   const currentHighlightClass = currentMessage?.highlightClass || highlightClass
   const currentTargetId = currentMessage?.targetHtmlId
 
+  const notifyFinish = useCallback(() => {
+    if (hasFinishedRef.current) return
+    hasFinishedRef.current = true
+    onFinish?.()
+  }, [onFinish])
+
+  const startFadeOut = useCallback(() => {
+    if (fadeTimeoutRef.current) return
+    setIsFading(true)
+    fadeTimeoutRef.current = window.setTimeout(() => {
+      setIsMounted(false)
+      notifyFinish()
+    }, LOADING_REPORT_FADE_OUT_DURATION_MS)
+  }, [notifyFinish])
+
   useEffect(() => {
     if (!isReportPage) {
-      window.setTimeout(() => setIsMounted(false), 0)
+      const timeout = window.setTimeout(() => {
+        setIsMounted(false)
+        notifyFinish()
+      }, 0)
+      return () => window.clearTimeout(timeout)
     }
-  }, [isReportPage])
+    return undefined
+  }, [isReportPage, notifyFinish])
+
+  useEffect(() => {
+    if (!shouldSkipForCookie) return undefined
+    notifyFinish()
+    return undefined
+  }, [notifyFinish, shouldSkipForCookie])
 
   useEffect(() => {
     if (!isMounted) return undefined
@@ -96,15 +123,12 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   }, [isMounted])
 
   const handleFinish = useCallback(() => {
+    if (fadeTimeoutRef.current) return
     if (!DISABLE_COOKIES) {
       setReportIntroSeenCookie()
     }
-    setIsFading(true)
-    fadeTimeoutRef.current = window.setTimeout(
-      () => setIsMounted(false),
-      LOADING_REPORT_FADE_OUT_DURATION_MS,
-    )
-  }, [])
+    startFadeOut()
+  }, [startFadeOut])
 
   const handleSkip = () => {
     messageTimeoutsRef.current.forEach(clearTimeout)
@@ -208,7 +232,10 @@ function LoadingReport({ messages = DEFAULT_MESSAGES, highlightClass }) {
   useEffect(
     () => () => {
       messageTimeoutsRef.current.forEach(clearTimeout)
-      window.clearTimeout(fadeTimeoutRef.current)
+      if (fadeTimeoutRef.current) {
+        window.clearTimeout(fadeTimeoutRef.current)
+        fadeTimeoutRef.current = undefined
+      }
     },
     [],
   )
