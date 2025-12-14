@@ -1,3 +1,6 @@
+import { hasSeenInfoModal } from './cookies'
+import { openBloodInfoModal } from './prepareInfoModal.jsx'
+
 const getHeadingElements = (root) => {
   if (!root || typeof root.querySelectorAll !== 'function') return []
   return Array.from(
@@ -38,6 +41,41 @@ export const attachScrollHeadingLogger = () => {
   if (!scrollTarget) return null
 
   let highlightedNav = null
+  let hasLoggedBlood = false
+  let bloodPromptEl = null
+
+  const ensureBloodPrompt = () => {
+    if (bloodPromptEl) return bloodPromptEl
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.bottom = '24px'
+    container.style.right = '24px'
+    container.style.zIndex = '10002'
+    container.style.background = '#0f172a'
+    container.style.color = '#ffffff'
+    container.style.padding = '12px 16px'
+    container.style.borderRadius = '12px'
+    container.style.boxShadow = '0 8px 24px rgba(0,0,0,0.16)'
+    container.style.cursor = 'pointer'
+    container.style.display = 'none'
+    container.style.fontSize = '14px'
+    container.style.lineHeight = '20px'
+    container.style.maxWidth = '240px'
+    container.textContent = 'To know more, Blood results'
+    container.addEventListener('click', () => {
+      container.style.display = 'none'
+      openBloodInfoModal()
+    })
+    document.body.appendChild(container)
+    bloodPromptEl = container
+    return container
+  }
+
+  const hideBloodPrompt = () => {
+    if (bloodPromptEl) {
+      bloodPromptEl.style.display = 'none'
+    }
+  }
 
   const clearHighlight = () => {
     if (!highlightedNav) return
@@ -83,8 +121,27 @@ export const attachScrollHeadingLogger = () => {
       } else {
         clearHighlight()
       }
+
+      if (!hasLoggedBlood && text.toLowerCase() === 'blood') {
+        hasLoggedBlood = true
+        const hasSeen = hasSeenInfoModal('bloodinfo')
+        console.log(hasSeen ? 'Blood seen' : 'Blood not seen')
+      }
+
+      if (text.toLowerCase() === 'blood') {
+        const hasSeen = hasSeenInfoModal('bloodinfo')
+        if (!hasSeen) {
+          const prompt = ensureBloodPrompt()
+          prompt.style.display = 'block'
+        } else {
+          hideBloodPrompt()
+        }
+      } else {
+        hideBloodPrompt()
+      }
     } else {
       clearHighlight()
+      hideBloodPrompt()
     }
   }
 
